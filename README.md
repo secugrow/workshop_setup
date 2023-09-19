@@ -14,7 +14,7 @@ It is necessary to install appium 2.0 or greater!
 'npm install -g appium'
 
 ### Android SDK and build-tools
-There are serval ways to get Android SDK and the buildtools. E.g. you can install Android Studio or you do it manually
+There are serval ways to get Android SDK and the buildtools. E.g. you can install Android Studio or you use the sdkmanager (https://developer.android.com/tools/sdkmanager)
 
 
 ## Installation for Windows
@@ -22,7 +22,6 @@ There are serval ways to get Android SDK and the buildtools. E.g. you can instal
 ### node installation
 https://nodejs.org/en/download/
 
-### Java installation
 
 e.g. 
 ### Android SDK with Android Studio
