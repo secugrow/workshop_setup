@@ -3,14 +3,35 @@
 # Prerequisites
 Install Java for your OS (recommended Version 15 or above)
 
-## Installation for Linux (Ubuntu)
+## Installation
 
-### node
+### node for linux (ubuntu)
 
 ```shell
 sudo apt install nodejs
 sudo apt install npm
 ```
+
+### node for mac
+
+easiest to do via brew:
+
+```shell
+# install brew
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# install node
+brew install node
+
+node -v 
+# should show version number
+
+npm -v
+# should show version number too
+```
+
+another option would be to install node u. npm via `nvm` (just in case you need to switch between different versions)-> good [tutorial](https://radixweb.com/blog/installing-npm-and-nodejs-on-windows-and-mac)
+
 
 ### Appium 
 It is necessary to install appium 2.0 or greater!
@@ -20,7 +41,7 @@ npm install -g appium
 ```
 
 ### Android SDK and build-tools
-There are several ways to get Android SDK and the buildtools. E.g. you can install Android Studio or you use the sdkmanager (https://developer.android.com/tools/sdkmanager)
+There's several ways to get Android SDK and the buildtools. E.g. you can install Android Studio or you use the sdkmanager (https://developer.android.com/tools/sdkmanager)
 
 
 **installation without an IDE**
