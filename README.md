@@ -78,5 +78,15 @@ and set value as **C:Users\YourUser\AppData\Local\Android\SDK** (path where SDK 
 Add the Android SDK paths into your existing PATH variable value as `%ANDROID_HOME%\tools;%ANDROID_HOME%\platform-tools;%ANDROID_HOME%\build-tools`
 
 
+## nerd stuff
+
+### starting tests in terminal...this is also what's being executed in your CI-Pipeline
+
+```shell
+# 
+mvn clean verify -Dbrowser=appium_android_device -DbaseUrl="https://www.wikipedia.org" -Dselenium.grid=http://localhost:4723 -Ddevice.id=$(adb devices -l | awk '(NR>1) {print $1}')
+```
+
+
 
 
