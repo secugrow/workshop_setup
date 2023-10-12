@@ -80,11 +80,35 @@ Add the Android SDK paths into your existing PATH variable value as `%ANDROID_HO
 
 ## nerd stuff
 
-### starting tests in terminal...this is also what's being executed in your CI-Pipeline
+### starting tests in terminal...
 
 ```shell
-# 
-mvn clean verify -Dbrowser=appium_android_device -DbaseUrl="https://www.wikipedia.org" -Dselenium.grid=http://localhost:4723 -Ddevice.id=$(adb devices -l | awk '(NR>1) {print $1}')
+# clone from github
+git clone https://github.com/secugrow/kotlin-archetype.git
+# change into kotlin-archetype
+cd kotlin-archetype.git
+# build the archetype to have it available in your local maven-repository
+mvn clean install -DskipTests
+# step out of the archetype
+cd ..
+# issue maven command to build a project from the archetype
+mvn archetype:generate \
+-DarchetypeArtifactId=secugrow-kotlin-archetype \
+-DarchetypeGroupId=io.secugrow \
+-DarchetypeVersion=1.8.0-SNAPSHOT \
+-DgroupId=at.ptss \
+-DartifactId=testme-kotlin \
+-DinteractiveMode=false \
+-Da11y=false
+# change into **testme-kotlin**
+cd testme-kotlin
+# issue maven command to launch tests
+ mvn clean verify -Dbrowser=appium_android_device \
+-DbaseUrl="https://www.wikipedia.org" \
+-Dselenium.grid=http://127.0.0.1:4723 \
+-Ddevice.id=$(adb devices -l | awk '(NR>1) {print $1}') \
+-Dcucumber.filter.tags="not @no_appium"
+
 ```
 
 
