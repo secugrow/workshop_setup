@@ -85,6 +85,8 @@ Add the Android SDK paths into your existing PATH variable value as `%ANDROID_HO
 ```shell
 # clone from github
 git clone https://github.com/secugrow/kotlin-archetype.git
+# change into qs_tage branch
+git checkout qs_tage
 # change into kotlin-archetype
 cd kotlin-archetype.git
 # build the archetype to have it available in your local maven-repository
