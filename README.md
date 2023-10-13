@@ -82,6 +82,8 @@ Add the Android SDK paths into your existing PATH variable value as `%ANDROID_HO
 
 ### starting tests in terminal...
 
+## clone: https://github.com/secugrow/kotlin-archetype.git
+
 ```shell
 # clone from github
 git clone https://github.com/secugrow/kotlin-archetype.git
