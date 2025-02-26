@@ -61,6 +61,25 @@ install_node_and_npm() {
     print_msg "Node.js and npm installed successfully."
 }
 
+# Install the latest version of Appium
+install_appium() {
+    print_msg "Installing the latest version of Appium..."
+    if command -v npm >/dev/null 2>&1; then
+        npm install -g appium
+    else
+        print_err_msg "Error: npm is not installed. Appium installation failed."
+        exit 1
+    fi
+
+    # Verify Appium installation
+    if [ -z "$(command -v appium)" ]; then
+        print_err_msg "Error: Appium was not installed properly."
+        exit 1
+    fi
+    print_msg "Appium installed successfully. Version: $(appium --version)"
+}
+
+
 # Install SDKMAN
 install_sdkman() {
     if [ -d "$HOME/.sdkman" ]; then
@@ -128,6 +147,7 @@ install_maven_and_java() {
 main() {
     install_nvm
     install_node_and_npm
+    install_appium
     install_sdkman
     install_maven_and_java
     print_msg "All installations completed successfully."
