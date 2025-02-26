@@ -3,15 +3,8 @@
 # Prerequisites
 Install Java for your OS (recommended Version 15 or above)
 
-execute `install_tools.sh`
+make the script executable via `chmod u+x install_tools_sh` and execut it afterwards via `./install_tools.sh`
 
-
-### Appium 
-It is necessary to install appium 2.0 or greater!
-
-```shell
-npm install -g appium
-```
 
 ### Android SDK and build-tools
 There's several ways to get Android SDK and the buildtools. E.g. you can install Android Studio or you use the sdkmanager (https://developer.android.com/tools/sdkmanager)
