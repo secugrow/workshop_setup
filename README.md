@@ -3,34 +3,7 @@
 # Prerequisites
 Install Java for your OS (recommended Version 15 or above)
 
-## Installation
-
-### node for linux (ubuntu)
-
-```shell
-sudo apt install nodejs
-sudo apt install npm
-```
-
-### node for mac
-
-easiest to do via brew:
-
-```shell
-# install brew
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# install node
-brew install node
-
-node -v 
-# should show version number
-
-npm -v
-# should show version number too
-```
-
-another option would be to install node u. npm via `nvm` (just in case you need to switch between different versions)-> good [tutorial](https://radixweb.com/blog/installing-npm-and-nodejs-on-windows-and-mac)
+execute `install_tools.sh`
 
 
 ### Appium 
