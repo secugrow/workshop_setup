@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # author: chris
 # reason: setup basic environment for workshop
@@ -22,9 +22,9 @@ install_nvm() {
     print_msg "Installing NVM..."
     NVM_INSTALL_URL="https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh"
     if command -v curl >/dev/null 2>&1; then
-        curl -o- "$NVM_INSTALL_URL" | sh
+        curl -o- "$NVM_INSTALL_URL" | bash
     elif command -v wget >/dev/null 2>&1; then
-        wget -qO- "$NVM_INSTALL_URL" | sh
+        wget -qO- "$NVM_INSTALL_URL" | bash
     else
         print_err_msg "Error: curl or wget is required to download NVM."
         exit 1
@@ -82,36 +82,46 @@ install_appium() {
 
 # Install SDKMAN
 install_sdkman() {
-    if [ -d "$HOME/.sdkman" ]; then
-        print_msg "SDKMAN is already installed. Skipping installation..."
-        # Load SDKMAN in the current shell session
-        export SDKMAN_DIR="$HOME/.sdkman"
-        [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ] && \. "$SDKMAN_DIR/bin/sdkman-init.sh"
-    else
-        print_msg "Installing SDKMAN..."
-        SDKMAN_INSTALL_URL="https://get.sdkman.io"
-        if command -v curl >/dev/null 2>&1; then
-            curl -s "$SDKMAN_INSTALL_URL" | sh
-        elif command -v wget >/dev/null 2>&1; then
-            wget -qO- "$SDKMAN_INSTALL_URL" | sh
-        else
-            print_err_msg "Error: curl or wget is required to download SDKMAN."
-            exit 1
-        fi
+     if [ -d "$HOME/.sdkman" ]; then
+         print_msg "SDKMAN is already installed. Skipping installation..."
+         # Load SDKMAN in the current shell session
+         export SDKMAN_DIR="$HOME/.sdkman"
+         [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ] && \. "$SDKMAN_DIR/bin/sdkman-init.sh"
+     else
+         print_msg "Installing zip, unzip, and dependencies for SDKMAN..."
+         if command -v apt-get >/dev/null 2>&1; then
+             sudo apt-get update && sudo apt-get install -y zip unzip
+         elif command -v yum >/dev/null 2>&1; then
+             sudo yum install -y zip unzip
+         else
+             print_err_msg "Error: Unsupported package manager. Please install zip and unzip manually."
+             exit 1
+         fi
 
-        # Load SDKMAN in the current shell session
-        export SDKMAN_DIR="$HOME/.sdkman"
-        [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ] && \. "$SDKMAN_DIR/bin/sdkman-init.sh"
+         print_msg "Installing SDKMAN..."
+         SDKMAN_INSTALL_URL="https://get.sdkman.io"
+         if command -v curl >/dev/null 2>&1; then
+             curl -s "$SDKMAN_INSTALL_URL" | bash
+         elif command -v wget >/dev/null 2>&1; then
+             wget -qO- "$SDKMAN_INSTALL_URL" | bash
+         else
+             print_err_msg "Error: curl or wget is required to download SDKMAN."
+             exit 1
+         fi
 
-        # Verify installation
-        if [ -z "$(command -v sdk)" ]; then
-            print_err_msg "Error: SDKMAN was not installed properly."
-            exit 1
-        fi
+         # Load SDKMAN in the current shell session
+         export SDKMAN_DIR="$HOME/.sdkman"
+         [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ] && \. "$SDKMAN_DIR/bin/sdkman-init.sh"
 
-        print_msg "SDKMAN installed successfully."
-    fi
-}
+         # Verify installation
+         if [ -z "$(command -v sdk)" ]; then
+             print_err_msg "Error: SDKMAN was not installed properly."
+             exit 1
+         fi
+
+         print_msg "SDKMAN installed successfully."
+     fi
+ }
 
 # Install Maven and Java using SDKMAN
 install_maven_and_java() {
@@ -131,7 +141,7 @@ install_maven_and_java() {
 
     print_msg "Installing Java 21 via SDKMAN..."
     # Install Java 21
-    sdk install java 21 || print_msg "Java 21 is already installed."
+    sdk install java 21.0.6-librca || print_msg "Java 21 is already installed."
 
     # Set Java 21 as the default version
     sdk default java 21
