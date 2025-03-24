@@ -10,11 +10,11 @@ set -e
 
 # Function to print messages
 print_msg() {
-    printf "$(tput bold)%s\n$(tput sgr0)" "$1"
+    printf "$(tput bold)::: %s :::\n$(tput sgr0)" "$1"
 }
 
 print_err_msg() {
-    printf "$(tput setaf 1)%s\n$(tput sgr0)" "$1"
+    printf "$(tput setaf 1)-> %s <-\n$(tput sgr0)" "$1"
 }
 
 # Install NVM (Node Version Manager)
@@ -129,28 +129,37 @@ install_maven_and_java() {
     # Ensure SDKMAN is loaded
     [ -s "$HOME/.sdkman/bin/sdkman-init.sh" ] && . "$HOME/.sdkman/bin/sdkman-init.sh"
 
-    print_msg "Installing Maven 3.9.5 via SDKMAN..."
-    # Install Maven 3.9.5
-    sdk install maven 3.9.5 || print_msg "Maven 3.9.5 is already installed."
-
-    if [ -z "$(command -v mvn)" ]; then
-        print_err_msg "Error: Maven 3.9.5 was not installed properly."
-        exit 1
-    fi
-    print_msg "Maven installed. Version: $(mvn -v | head -n 1)"
-
     print_msg "Installing Java 21 via SDKMAN..."
     # Install Java 21
     sdk install java 21.0.6-librca || print_msg "Java 21 is already installed."
 
     # Set Java 21 as the default version
-    sdk default java 21
+    sdk default java $(ls -A1 $SDKMAN_CANDIDATES_DIR/java | head -n 1)
+
+    # Source .bashrc to update environment variables
+    source ~/.bashrc
 
     if [ -z "$(java -version 2>&1 | grep '21')" ]; then
         print_err_msg "Error: Java 21 was not installed or set properly."
         exit 1
     fi
+
     print_msg "Java installed successfully: $(java -version 2>&1 | head -n 1)"
+
+    print_msg "Installing Maven 3.9.5 via SDKMAN..."
+    # Install Maven 3.9.5
+    sdk install maven 3.9.5 || print_msg "Maven 3.9.5 is already installed."
+    sdk default maven $(ls -A1 $SDKMAN_CANDIDATES_DIR/maven | head -n 1)
+
+    # Source .bashrc to update environment variables
+    source ~/.bashrc
+
+    if [ -z "$(command -v mvn)" ]; then
+        print_err_msg "Error: Maven 3.9.5 was not installed properly."
+        exit 1
+    fi
+
+    print_msg "Maven installed. Version: $(mvn -v | head -n 1)"
 }
 
 # Main script execution
@@ -164,3 +173,6 @@ main() {
 }
 
 main
+source ~/.bashrc
+
+exit 0
