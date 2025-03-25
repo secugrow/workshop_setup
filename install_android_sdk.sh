@@ -103,24 +103,27 @@ esac
 print_msg "Using shell configuration file: $SHELL_CONFIG_FILE"
 print_msg "Adding necessary environment variables to PATH"
 
-ANDROID_VARIABLES="
-export ANDROID_SDK_ROOT=\$HOME/$ANDROID_SDK_ROOT_DIR_NAME
-export ANDROID_CMDLINE_TOOLS=\$ANDROID_SDK_ROOT/cmdline-tools
-export ANDROID_PLATFORM_TOOLS=\$ANDROID_SDK_ROOT/platform-tools
-export ANDROID_BUILD_TOOLS=\$ANDROID_SDK_ROOT/build-tools/34.0.0
-export PATH=\$ANDROID_CMDLINE_TOOLS/bin:\$ANDROID_PLATFORM_TOOLS:\$ANDROID_BUILD_TOOLS:\$PATH
-"
-
+# Set up environment variables
 if grep -q "ANDROID_SDK_ROOT=" "$SHELL_CONFIG_FILE"; then
   print_msg "ANDROID_SDK_ROOT is already configured in $SHELL_CONFIG_FILE. Skipping addition."
 else
-  echo "......... modifying PATH ........."
-  # Insert environment variables one line below the first occurrence of export PATH
-  sed -i '/export PATH=/a '"$ANDROID_VARIABLES" "$SHELL_CONFIG_FILE"
+  print_msg "Adding ANDROID_SDK_ROOT and PATH modifications to $SHELL_CONFIG_FILE"
+  # Find the line number of the last occurrence of 'export PATH='
+  last_path_line=$(awk '/export PATH=/ { last_match=NR } END { print last_match }' "$SHELL_CONFIG_FILE")
+  print_msg "Last occurrence of export PATH found at line $last_path_line"
+  # Insert environment variables one line below the last occurrence of export PATH
+  awk -v last_path_line="$last_path_line" -v current_date="$(date '+%Y-%m-%d %H:%M:%S')" '
+  { print }
+  NR == last_path_line +1 {
+    print "##### Android SDK Environment Variables (added on " current_date ") #####"
+    print "export ANDROID_SDK_ROOT=$HOME/'"$ANDROID_SDK_ROOT_DIR_NAME"'"
+    print "export ANDROID_CMDLINE_TOOLS=$ANDROID_SDK_ROOT/cmdline-tools"
+    print "export ANDROID_PLATFORM_TOOLS=$ANDROID_SDK_ROOT/platform-tools"
+    print "export ANDROID_BUILD_TOOLS=$ANDROID_SDK_ROOT/build-tools/34.0.0"
+    print "export PATH=$ANDROID_CMDLINE_TOOLS/bin:$ANDROID_PLATFORM_TOOLS:$ANDROID_BUILD_TOOLS:$PATH"
+  }' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && mv "$SHELL_CONFIG_FILE.tmp" "$SHELL_CONFIG_FILE"
+
   print_msg "ANDROID_SDK_ROOT and PATH modifications added to $SHELL_CONFIG_FILE"
-  # Append the environment variables only if they are not already present
-#  echo "$ANDROID_VARIABLES" >> "$SHELL_CONFIG_FILE"
-#  print_msg "ANDROID_SDK_ROOT and necessary PATH modifications added to $SHELL_CONFIG_FILE."
 fi
 
 # Verify PATH includes Android SDK
