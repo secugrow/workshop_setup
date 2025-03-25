@@ -1,14 +1,13 @@
 #!/bin/bash
 
-# author: chris
-# reason: setup basic environment for workshop
-# usage: chmod u+x install_android_sdk && ./install_android_sdk.sh
-
+# Author: Chris
+# Reason: Set up a basic environment for workshop
+# Usage: chmod u+x install_android_sdk && ./install_android_sdk.sh
 
 # Exit on error
 set -e
 
-# helper functions
+# Helper functions
 print_msg() {
     printf "$(tput bold)::: %s :::\n$(tput sgr0)" "$1"
 }
@@ -17,10 +16,10 @@ print_err_msg() {
     printf "$(tput setaf 1)-> %s <-\n$(tput sgr0)" "$1"
 }
 
-# variables
+# Variables
 ANDROID_SDK_ROOT_DIR_NAME="android_sdk"
 
-# files to download from
+# Files to download from (appropriate for the OS)
 URL_MAC="https://dl.google.com/android/repository/commandlinetools-mac-11076708_latest.zip"
 URL_WIN="https://dl.google.com/android/repository/commandlinetools-win-11076708_latest.zip"
 URL_LINUX="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
@@ -36,46 +35,109 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     URL=$URL_LINUX
     OUTPUT="commandlinetools-linux-11076708_latest.zip"
 else
-    print_err_msg "Unsupported OS"
+    print_err_msg "Unsupported OS: $OSTYPE"
+    exit 1
+fi
+
+# Check if wget is installed (safe fallback)
+if ! command -v wget &> /dev/null; then
+    print_err_msg "wget is not installed. Please install wget manually and rerun the script."
     exit 1
 fi
 
 # Check if unzip is installed
-if ! command -v unzip &> /dev/null
-then
+if ! command -v unzip &> /dev/null; then
     print_msg "unzip could not be found, installing..."
     if [[ "$OSTYPE" == "darwin"* ]]; then
         # Install unzip on macOS
-        brew install unzip
+        if command -v brew &> /dev/null; then
+            brew install unzip
+        else
+            print_err_msg "Homebrew is not installed. Please install it first (https://brew.sh)."
+            exit 1
+        fi
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         # Install unzip on Linux
         sudo apt-get update
         sudo apt-get install -y unzip
+    else
+        print_err_msg "Unable to install unzip. Please install it manually."
+        exit 1
     fi
 fi
 
-print_msg "prerequisites done..start download"
-# Download the file
-wget $URL -O $OUTPUT
+print_msg "Prerequisites confirmed. Starting download."
 
-print_msg "unzipping downloaded package"
 # Unzip the downloaded file
-unzip $OUTPUT -d ./"$ANDROID_SDK_ROOT_DIR_NAME"
+if [[ -d "$ANDROID_SDK_ROOT_DIR_NAME" ]]; then
+    print_err_msg "Directory $ANDROID_SDK_ROOT_DIR_NAME already exists. Please delete and run script again"
+    exit 1
+else
+  # Download the file
+  wget -O "$OUTPUT" "$URL"
+  print_msg "Unzipping downloaded package..."
+  unzip "$OUTPUT" -d "$ANDROID_SDK_ROOT_DIR_NAME"
+  rm "$OUTPUT" # Clean up the downloaded ZIP file after unzipping
+fi
 
-print_msg "adding necessary environment variables to PATH"
-echo "ANDROID_SDK_ROOT=/app/$ANDROID_SDK_ROOT_DIR_NAME" | sudo tee -a /etc/environment
-echo "ANDROID_CMDLINE_TOOLS=\$ANDROID_SDK_ROOT/cmdline-tools" | sudo tee -a /etc/environment
-echo "ANDROID_PLATFORM_TOOLS=\$ANDROID_SDK_ROOT/platform-tools" | sudo tee -a /etc/environment
-echo "ANDROID_BUILD_TOOLS=\$ANDROID_SDK_ROOT/build-tools/34.0.0" | sudo tee -a /etc/environment
+# Detect the current shell
+CURRENT_SHELL=$(ps -p $(ps -o ppid= -p $$) -o comm=)
 
-echo "PATH=\$ANDROID_SDK_ROOT:\$ANDROID_CMDLINE_TOOLS/bin:\$ANDROID_PLATFORM_TOOLS:\$ANDROID_BUILD_TOOLS:\$PATH" | sudo tee -a /etc/environment
+# Output detected shell
+print_msg "Detected Shell: $CURRENT_SHELL"
 
-source /etc/environment
+# Determine the shell configuration file dynamically
+case "$CURRENT_SHELL" in
+  zsh)
+    SHELL_CONFIG_FILE="$HOME/.zshrc"
+    ;;
+  bash)
+    SHELL_CONFIG_FILE="$HOME/.bashrc"
+    ;;
+  *)
+    print_msg "Unknown or unsupported shell ($CURRENT_SHELL). Defaulting to ~/.bashrc."
+    SHELL_CONFIG_FILE="$HOME/.bashrc"
+    ;;
+esac
 
-print_msg "installing platform-tools, android-platform and build-tools"
-yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --install "platform-tools" "platforms;android-33" "build-tools;34.0.0"
+print_msg "Using shell configuration file: $SHELL_CONFIG_FILE"
+print_msg "Adding necessary environment variables to PATH"
 
-print_msg "successfully installed and setup necessary android libs"
+ANDROID_VARIABLES="
+export ANDROID_SDK_ROOT=\$HOME/$ANDROID_SDK_ROOT_DIR_NAME
+export ANDROID_CMDLINE_TOOLS=\$ANDROID_SDK_ROOT/cmdline-tools
+export ANDROID_PLATFORM_TOOLS=\$ANDROID_SDK_ROOT/platform-tools
+export ANDROID_BUILD_TOOLS=\$ANDROID_SDK_ROOT/build-tools/34.0.0
+export PATH=\$ANDROID_CMDLINE_TOOLS/bin:\$ANDROID_PLATFORM_TOOLS:\$ANDROID_BUILD_TOOLS:\$PATH
+"
+
+if grep -q "ANDROID_SDK_ROOT=" "$SHELL_CONFIG_FILE"; then
+  print_msg "ANDROID_SDK_ROOT is already configured in $SHELL_CONFIG_FILE. Skipping addition."
+else
+  echo "......... modifying PATH ........."
+  # Insert environment variables one line below the first occurrence of export PATH
+  sed -i '/export PATH=/a '"$ANDROID_VARIABLES" "$SHELL_CONFIG_FILE"
+  print_msg "ANDROID_SDK_ROOT and PATH modifications added to $SHELL_CONFIG_FILE"
+  # Append the environment variables only if they are not already present
+#  echo "$ANDROID_VARIABLES" >> "$SHELL_CONFIG_FILE"
+#  print_msg "ANDROID_SDK_ROOT and necessary PATH modifications added to $SHELL_CONFIG_FILE."
+fi
+
+# Verify PATH includes Android SDK
+if echo "$PATH" | grep -q "$ANDROID_SDK_ROOT_DIR_NAME"; then
+  print_msg "Environment variables loaded successfully. Proceeding with Android SDK installation."
+else
+  print_err_msg "Environment variables were not updated correctly. Please run the following command manually:"
+  print_msg "source $SHELL_CONFIG_FILE"
+  print_msg "yes | \"$ANDROID_CMDLINE_TOOLS/bin/sdkmanager\" --sdk_root=\"$ANDROID_SDK_ROOT\" --install \"platform-tools\" \"platforms;android-33\" \"build-tools;34.0.0\""
+  exit 1
+fi
+
+print_msg "Installing platform-tools, Android platform, and build-tools."
+
+# Install required Android tools
+yes | "$ANDROID_CMDLINE_TOOLS/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" --install "platform-tools" "platforms;android-33" "build-tools;34.0.0"
+
+print_msg "Successfully installed and set up necessary Android tools."
 
 exit 0
-
