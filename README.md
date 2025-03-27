@@ -3,14 +3,12 @@
 # Prerequisites
 Install Java for your OS (recommended Version 15 or above)
 
-make the script executable via `chmod u+x install_tools_sh` and execut it afterwards via `./install_tools.sh`
+make the script executable via `chmod u+x install_tools.sh` and execute it afterwards via `./install_tools.sh`
 
 
 ### Android SDK and build-tools
-There's several ways to get Android SDK and the buildtools. E.g. you can install Android Studio or you use the sdkmanager (https://developer.android.com/tools/sdkmanager)
 
-
-**installation without an IDE**
+make the script executable via `chmod u+x install_android_sdk.sh` and execute it afterwards via `./install_android_sdk.sh`
 
 
 ```shell
