@@ -5,11 +5,7 @@
 # Usage:        chmod u+x install_android_sdk.sh && ./install_android_sdk.sh
 # Description:  This script downloads the Android SDK command line tools and sets up the necessary environment variables.
 # IMPORTANT:    commandlinetools version is tied to the URL, please update the URL if the version changes.
-# Author:       chris
-# Reason:       Set up a basic environment for workshop
-# Usage:        chmod u+x install_android_sdk.sh && ./install_android_sdk.sh
-# Description:  This script downloads the Android SDK command line tools and sets up the necessary environment variables.
-# IMPORTANT:    commandlinetools version is tied to the URL, please update the URL if the version changes.
+
 
 # Exit on error
 set -e
@@ -49,26 +45,24 @@ install_prerequisites() {
         exit 1
     fi
 
-# Check if unzip is installed
-if ! command -v unzip &> /dev/null; then
-    print_msg "unzip could not be found, installing..."
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        # Install unzip on macOS
-        if command -v brew &> /dev/null; then
-            brew install unzip
+    # Check if unzip is installed
+    if ! command -v unzip &> /dev/null; then
+        print_msg "unzip could not be found, installing..."
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            if command -v brew &> /dev/null; then
+                brew install unzip
+            else
+                print_err_msg "Homebrew is not installed. Please install it first (https://brew.sh)."
+                exit 1
+            fi
+        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            sudo apt-get update
+            sudo apt-get install -y unzip
         else
-            print_err_msg "Homebrew is not installed. Please install it first (https://brew.sh)."
+            print_err_msg "Unable to install unzip. Please install it manually."
             exit 1
         fi
-    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        # Install unzip on Linux
-        sudo apt-get update
-        sudo apt-get install -y unzip
-    else
-        print_err_msg "Unable to install unzip. Please install it manually."
-        exit 1
     fi
-fi
 
     print_msg "Prerequisites confirmed."
 }
@@ -109,11 +103,8 @@ download_and_extract_sdk() {
 configure_environment() {
     print_msg "Configuring environment variables..."
 
-# Detect the current shell
-CURRENT_SHELL=$(ps -p $(ps -o ppid= -p $$) -o comm=)
-
-# Output detected shell
-print_msg "Detected Shell: $CURRENT_SHELL"
+    # Detect the current shell
+    CURRENT_SHELL=$(ps -p $(ps -o ppid= -p $$) -o comm=)
 
     # Determine the shell configuration file dynamically
      case "$CURRENT_SHELL" in
@@ -146,30 +137,45 @@ print_msg "Detected Shell: $CURRENT_SHELL"
             ;;
     esac
 
-print_msg "Using shell configuration file: $SHELL_CONFIG_FILE"
-print_msg "Adding necessary environment variables to PATH"
+    print_msg "Using shell configuration file: $SHELL_CONFIG_FILE"
 
-# Set up environment variables
-if grep -q "ANDROID_SDK_ROOT=" "$SHELL_CONFIG_FILE"; then
-  print_msg "ANDROID_SDK_ROOT is already configured in $SHELL_CONFIG_FILE. Skipping addition."
-else
-  print_msg "Adding ANDROID_SDK_ROOT and PATH modifications to $SHELL_CONFIG_FILE"
-  # Find the line number of the last occurrence of 'export PATH='
-  last_path_line=$(awk '/export PATH=/ { last_match=NR } END { print last_match }' "$SHELL_CONFIG_FILE")
-  # Insert environment variables one line below the last occurrence of export PATH
-  awk -v last_path_line="$last_path_line" -v current_date="$(date '+%Y-%m-%d %H:%M:%S')" '
-  { print }
-  NR == last_path_line +1 {
-    print "##### Android SDK Environment Variables (added on " current_date ") #####"
-    print "export ANDROID_SDK_ROOT='"$ANDROID_SDK_ROOT_DIR"'"
-    print "export ANDROID_CMDLINE_TOOLS=$ANDROID_SDK_ROOT/cmdline-tools"
-    print "export ANDROID_PLATFORM_TOOLS=$ANDROID_SDK_ROOT/platform-tools"
-    print "export ANDROID_BUILD_TOOLS=$ANDROID_SDK_ROOT/build-tools/34.0.0"
-    print "export PATH=$ANDROID_CMDLINE_TOOLS/bin:$ANDROID_PLATFORM_TOOLS:$ANDROID_BUILD_TOOLS:$PATH"
-  }' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && mv "$SHELL_CONFIG_FILE.tmp" "$SHELL_CONFIG_FILE"
+    if grep -q "ANDROID_SDK_ROOT=" "$SHELL_CONFIG_FILE"; then
+        print_msg "ANDROID_SDK_ROOT is already configured in $SHELL_CONFIG_FILE. Skipping addition."
+    else
+        print_msg "Adding ANDROID_SDK_ROOT and PATH modifications to $SHELL_CONFIG_FILE"
 
-  print_msg "ANDROID_SDK_ROOT and PATH modifications added to $SHELL_CONFIG_FILE"
-fi
+        # Find the line number of the last occurrence of 'export PATH='
+        last_path_line=$(awk '/export PATH=/ { last_match=NR } END { print last_match }' "$SHELL_CONFIG_FILE")
+
+        # If no 'export PATH=' is found, find the first occurrence of SDKMAN installation
+        if [[ -z "$last_path_line" ]]; then
+            sdkman_line=$(awk '/sdkman-init.sh/ { print NR; exit }' "$SHELL_CONFIG_FILE")
+            if [[ -z "$sdkman_line" ]]; then
+                # If no SDKMAN installation is found, append to the end of the file
+                sdkman_line=$(wc -l < "$SHELL_CONFIG_FILE")
+            fi
+            last_path_line=$((sdkman_line - 3))
+        fi
+
+        # Insert environment variables above the determined line
+        awk -v insert_line="$last_path_line" -v current_date="$(date '+%Y-%m-%d %H:%M:%S')" '
+        { print }
+        NR == insert_line {
+            print "##### Android SDK Environment Variables (added on " current_date ") #####"
+            print "export ANDROID_SDK_ROOT='"$ANDROID_SDK_ROOT_DIR"'"
+            print "export ANDROID_CMDLINE_TOOLS=$ANDROID_SDK_ROOT/cmdline-tools"
+            print "export ANDROID_PLATFORM_TOOLS=$ANDROID_SDK_ROOT/platform-tools"
+            print "export ANDROID_BUILD_TOOLS=$ANDROID_SDK_ROOT/build-tools/34.0.0"
+            print "export PATH=$ANDROID_CMDLINE_TOOLS/bin:$ANDROID_PLATFORM_TOOLS:$ANDROID_BUILD_TOOLS:$PATH"
+        }' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && mv "$SHELL_CONFIG_FILE.tmp" "$SHELL_CONFIG_FILE"
+
+        print_msg "ANDROID_SDK_ROOT and PATH modifications added to $SHELL_CONFIG_FILE"
+    fi
+}
+
+# Install Android SDK components
+install_sdk_components() {
+    print_msg "Installing Android SDK components..."
 
     ANDROID_CMDLINE_TOOLS="$ANDROID_SDK_ROOT_DIR/cmdline-tools"
     if echo "$PATH" | grep -q "$ANDROID_SDK_ROOT_DIR"; then
