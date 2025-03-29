@@ -9,7 +9,7 @@ make the script executable via `chmod u+x install_tools.sh` and execute it after
 ### Android SDK and build-tools
 
 make the script executable via `chmod u+x install_android_sdk.sh` and execute it afterwards via `./install_android_sdk.sh`.
-It will download all necessary files and edit your `~/.bashrc` or `~/.zshrc` with following env-variables.
+It will download all necessary files and edit your `~/.bashrc` or `~/.zshrc` or `~/.profile` with following env-variables.
 
 ```shell
 
