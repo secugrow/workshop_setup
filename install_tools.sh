@@ -45,7 +45,7 @@ install_node_and_npm() {
         print_msg "npm is already installed."
     else
         print_msg "Installing Node.js and npm using NVM..."
-        exit 1
+
         if [ -z "$(command -v nvm)" ]; then
             print_err_msg "Error: NVM is not installed. Please check the installation."
             exit 1
