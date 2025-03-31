@@ -1,7 +1,7 @@
 # Workshop Setup
 
 # Prerequisites
-Install Java for your OS (recommended Version 15 or above)
+Install Java for your OS (recommended Version 21 or above)
 
 make the script executable via `chmod u+x install_tools.sh` and execute it afterwards via `./install_tools.sh`
 
@@ -39,58 +39,39 @@ and set value as **C:Users\YourUser\AppData\Local\Android\SDK** (path where SDK 
 
 Add the Android SDK paths into your existing PATH variable value as `%ANDROID_HOME%\tools;%ANDROID_HOME%\platform-tools;%ANDROID_HOME%\build-tools`
 
+---
 
+## fallback for nvm (https://www.freecodecamp.org/news/node-version-manager-nvm-install-guide/)
 
-## working steps on 31.03.2025 16:15
-
-```shell
-
-mvn archetype:generate -DarchetypeArtifactId=secugrow-kotlin-archetype -DarchetypeGroupId=io.secugrow -DarchetypeVersion=1.9.0 -DgroupId=at.ucaat.demo -DartifactId=testme_kotlin -DinteractiveMode=false -Da11y=false
-
-
+execute in terminal
 
 ```
+brew install nvm 
+# or via 
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+```
 
-
-
-
-
-## nerd stuff
-
-### starting tests in terminal...
-
-## clone: https://github.com/secugrow/kotlin-archetype.git
-
-```shell
-# clone from github
-git clone https://github.com/secugrow/kotlin-archetype.git
-# change into qs_tage branch
-git checkout qs_tage
-# change into kotlin-archetype
-cd kotlin-archetype.git
-# build the archetype to have it available in your local maven-repository
-mvn clean install -DskipTests
-# step out of the archetype
-cd ..
-# issue maven command to build a project from the archetype
-mvn archetype:generate \
--DarchetypeArtifactId=secugrow-kotlin-archetype \
--DarchetypeGroupId=io.secugrow \
--DarchetypeVersion=1.8.0-SNAPSHOT \
--DgroupId=at.ptss \
--DartifactId=testme-kotlin \
--DinteractiveMode=false \
--Da11y=false
-# change into **testme-kotlin**
-cd testme-kotlin
-# issue maven command to launch tests
- mvn clean verify -Dbrowser=appium_android_device \
--DbaseUrl="https://www.wikipedia.org" \
--Dselenium.grid=http://127.0.0.1:4723 \
--Ddevice.id=$(adb devices -l | awk '(NR>1) {print $1}') \
--Dcucumber.filter.tags="not @no_appium"
+if not automatically added during installation, do manually after install
 
 ```
+export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+```
+
+## fallback for sdkman (https://sdkman.io/install/)
+
+```
+curl -s "https://get.sdkman.io" | bash
+```
+
+Follow the on-screen instructions to wrap up the installation. Afterward, open a new terminal or run the following in the same shell:
+
+```
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+```
+
+---
+
 
 
 

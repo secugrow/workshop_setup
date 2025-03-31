@@ -229,24 +229,3 @@ main() {
 main
 
 exit 0
-
-# =====================
-
-# fallback for nvm (https://www.freecodecamp.org/news/node-version-manager-nvm-install-guide/)
-#
-# brew install nvm or via curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-#
-# if not automatically added during installation, do manually after install
-#
-# export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-# [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-
-# =====================
-
-# fallback for sdkman (https://sdkman.io/install/)
-#
-# curl -s "https://get.sdkman.io" | bash
-#
-# Follow the on-screen instructions to wrap up the installation. Afterward, open a new terminal or run the following in the same shell:
-#
-# source "$HOME/.sdkman/bin/sdkman-init.sh"
