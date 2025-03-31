@@ -154,6 +154,7 @@ configure_environment() {
         NR == insert_line {
             print "##### Android SDK Environment Variables (added on " current_date ") #####"
             print "export ANDROID_SDK_ROOT='"$ANDROID_SDK_ROOT_DIR"'"
+            print "export ANDROID_HOME='"$ANDROID_SDK_ROOT_DIR"'"
             print "export ANDROID_CMDLINE_TOOLS=$ANDROID_SDK_ROOT/cmdline-tools"
             print "export ANDROID_PLATFORM_TOOLS=$ANDROID_SDK_ROOT/platform-tools"
             print "export ANDROID_BUILD_TOOLS=$ANDROID_SDK_ROOT/build-tools/34.0.0"
