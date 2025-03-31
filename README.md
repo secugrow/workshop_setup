@@ -22,8 +22,6 @@ export PATH=$ANDROID_HOME:$ANDROID_PLATFORM_TOOLS:$ANDROID_CMD_LINE_TOOLS/bin:$A
 
 ```
 
-
-
 ## Installation for Windows
 
 ### node installation
@@ -40,6 +38,21 @@ Goto Configure environment variables:
 and set value as **C:Users\YourUser\AppData\Local\Android\SDK** (path where SDK is installed)
 
 Add the Android SDK paths into your existing PATH variable value as `%ANDROID_HOME%\tools;%ANDROID_HOME%\platform-tools;%ANDROID_HOME%\build-tools`
+
+
+
+## working steps on 31.03.2025 16:15
+
+```shell
+
+mvn archetype:generate -DarchetypeArtifactId=secugrow-kotlin-archetype -DarchetypeGroupId=io.secugrow -DarchetypeVersion=1.9.0 -DgroupId=at.ucaat.demo -DartifactId=testme_kotlin -DinteractiveMode=false -Da11y=false
+
+
+
+```
+
+
+
 
 
 ## nerd stuff
