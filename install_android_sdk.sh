@@ -6,7 +6,6 @@
 # Description:  This script downloads the Android SDK command line tools and sets up the necessary environment variables.
 # IMPORTANT:    commandlinetools version is tied to the URL, please update the URL if the version changes.
 
-
 # Exit on error
 set -e
 
