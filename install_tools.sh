@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# author: chris
-# reason: setup basic environment for workshop
-# usage: chmod u+x install_tools.sh && ./install_tools.sh
+# author:   chris
+# reason:   setup basic environment for workshop
+# usage:    chmod u+x install_tools.sh && ./install_tools.sh
 
 # Exit on error
 set -e

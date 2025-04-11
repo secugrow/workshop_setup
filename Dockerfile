@@ -1,8 +1,13 @@
 # Start with a minimal Ubuntu image
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 # Set non-interactive front-end for installing dependencies
 ENV DEBIAN_FRONTEND=noninteractive
+# for using chrome on your host machine
+# ENV DISPLAY=:0
+# ENV XAUTHORITY=/root/.Xauthority
+
+# 🔥🔥 TODO install chrome in docker container 🔥🔥
 
 # Install required dependencies
 RUN apt-get update && apt-get install -y \
@@ -28,4 +33,4 @@ RUN chmod +x /app/install_tools.sh
 RUN chmod +x /app/install_android_sdk.sh
 
 # Run bash as the default shell
-CMD ["/bin/bash", "-c", "/app/install_tools.sh && /app/install_android_sdk.sh && /bin/bash"]
+CMD ["/bin/bash"]

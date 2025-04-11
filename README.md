@@ -70,6 +70,19 @@ Follow the on-screen instructions to wrap up the installation. Afterward, open a
 source "$HOME/.sdkman/bin/sdkman-init.sh"
 ```
 
+### working mvn command running the tests
+```
+mvn test -Dbrowser=chrome -DbaseUrl="https://www.wikipedia.org" -Dcucumber.filter.tags=@all -Dcucumber.glue=at.ucaat.demo.stepdefinitions -Dcucumber.features=src/test/resources/features
+```
+
+### selenium-server download
+
+```
+java -jar selenium-server-4.30.0.jar standalone
+```
+
+
+
 ---
 
 
