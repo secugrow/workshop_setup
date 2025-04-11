@@ -26,13 +26,52 @@ print_err_msg() {
     printf "$(tput setaf 1)-> %s <-\n$(tput sgr0)" "$1"
 }
 
-# Install prerequisites
-install_prerequisites() {
-    print_msg "Checking prerequisites..."
+# Variables
+ANDROID_SDK_ROOT_DIR_NAME="android_sdk"
 
-    # Check if wget is installed
-    if ! command -v wget &> /dev/null; then
-        print_err_msg "wget is not installed. Please install wget manually and rerun the script."
+# Files to download from (appropriate for the OS)
+URL_MAC="https://dl.google.com/android/repository/commandlinetools-mac-11076708_latest.zip"
+URL_WIN="https://dl.google.com/android/repository/commandlinetools-win-11076708_latest.zip"
+URL_LINUX="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+
+# Determine the URL based on the operating system
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    URL=$URL_MAC
+    OUTPUT="commandlinetools-mac-11076708_latest.zip"
+elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+    URL=$URL_WIN
+    OUTPUT="commandlinetools-win-11076708_latest.zip"
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    URL=$URL_LINUX
+    OUTPUT="commandlinetools-linux-11076708_latest.zip"
+else
+    print_err_msg "Unsupported OS: $OSTYPE"
+    exit 1
+fi
+
+# Check if wget is installed (safe fallback)
+if ! command -v wget &> /dev/null; then
+    print_err_msg "wget is not installed. Please install wget manually and rerun the script."
+    exit 1
+fi
+
+# Check if unzip is installed
+if ! command -v unzip &> /dev/null; then
+    print_msg "unzip could not be found, installing..."
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # Install unzip on macOS
+        if command -v brew &> /dev/null; then
+            brew install unzip
+        else
+            print_err_msg "Homebrew is not installed. Please install it first (https://brew.sh)."
+            exit 1
+        fi
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Install unzip on Linux
+        sudo apt-get update
+        sudo apt-get install -y unzip
+    else
+        print_err_msg "Unable to install unzip. Please install it manually."
         exit 1
     fi
 
@@ -56,7 +95,7 @@ install_prerequisites() {
     fi
 
     print_msg "Prerequisites confirmed."
-}
+fi
 
 # Download and extract Android SDK
 download_and_extract_sdk() {
