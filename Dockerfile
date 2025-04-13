@@ -104,5 +104,5 @@ RUN appium driver install --source=npm appium-espresso-driver@${APPIUM_DRIVER_ES
     appium driver install --source=npm appium-geckodriver@${APPIUM_DRIVER_GECKO_VERSION} && \
     appium driver install --source=npm appium-uiautomator2-driver@${APPIUM_DRIVER_UIAUTOMATOR2_VERSION}
 
-# Run bash as the default shell
-CMD ["/bin/bash"]
+# Run Appium as the default command
+CMD ["appium", "--allow-insecure", "chromedriver_autodownload"]

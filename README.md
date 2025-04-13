@@ -1,5 +1,21 @@
 # Workshop Setup
 
+
+## latest Dockerfile update
+
+build the image with provided Dockerfile
+
+```shell
+docker build -t appium/appium:secugrow .
+```
+
+starting the docker image and running appium
+
+```shell
+docker run --privileged -d -it -p 4723:4723 -v /dev/bus/usb:/dev/bus/usb --name appium-container appium/appium:secugrow
+```
+
+
 # Prerequisites
 Install Java for your OS (recommended Version 21 or above)
 
