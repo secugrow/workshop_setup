@@ -43,7 +43,7 @@ RUN groupadd appiumuser \
 # Set up a working directory
 WORKDIR /home/appiumuser
 
-ENV JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
+ENV JAVA_HOME="/usr/lib/jvm/java-21-openjdk-arm64"
 ENV PATH=$PATH:$JAVA_HOME/bin
 
 # Install Android SDK
