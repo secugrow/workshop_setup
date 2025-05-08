@@ -22,6 +22,14 @@ print_msg_multiline() {
     printf "$(tput bold)::: $(tput sgr0)\n"
 }
 
+print_msg_multiline() {
+    printf "$(tput bold)::: $(tput sgr0)\n"
+    while IFS= read -r line; do
+        printf "%s\n" "$line"
+    done
+    printf "$(tput bold)::: $(tput sgr0)\n"
+}
+
 print_err_msg() {
     printf "$(tput setaf 1)-> %s <-\n$(tput sgr0)" "$1"
 }
@@ -80,8 +88,8 @@ download_and_extract_sdk() {
     ANDROID_SDK_ROOT_DIR="$(pwd)/android_sdk"
 
     if [[ -d "$ANDROID_SDK_ROOT_DIR" ]]; then
-        print_msg "Directory $ANDROID_SDK_ROOT_DIR already exists."
-        #exit 1
+        print_err_msg "Directory $ANDROID_SDK_ROOT_DIR already exists. Please delete and run script again."
+        exit 1
     else
         wget -O "$OUTPUT" "$URL"
         print_msg "Unzipping downloaded package..."
@@ -95,7 +103,7 @@ configure_environment() {
     print_msg "Configuring environment variables..."
 
     # Detect the current shell
-    CURRENT_SHELL=$(ps -p $(ps -o ppid= -p $$) -o comm= | sed 's/^-//')
+    CURRENT_SHELL=$(ps -p $(ps -o ppid= -p $$) -o comm=)
 
     # Determine the shell configuration file dynamically
      case "$CURRENT_SHELL" in
@@ -154,7 +162,6 @@ configure_environment() {
         NR == insert_line {
             print "##### Android SDK Environment Variables (added on " current_date ") #####"
             print "export ANDROID_SDK_ROOT='"$ANDROID_SDK_ROOT_DIR"'"
-            print "export ANDROID_HOME='"$ANDROID_SDK_ROOT_DIR"'"
             print "export ANDROID_CMDLINE_TOOLS=$ANDROID_SDK_ROOT/cmdline-tools"
             print "export ANDROID_PLATFORM_TOOLS=$ANDROID_SDK_ROOT/platform-tools"
             print "export ANDROID_BUILD_TOOLS=$ANDROID_SDK_ROOT/build-tools/34.0.0"
