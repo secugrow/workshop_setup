@@ -1,5 +1,4 @@
-# Start with ARM64 Ubuntu base image
-FROM arm64/ubuntu:22.04
+FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DISPLAY=:0
