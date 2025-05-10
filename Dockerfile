@@ -63,9 +63,9 @@ ENV PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools
 
 # ----------- ARM64 adb binary replacement (fix for RPi4) ------------
 RUN wget -O /tmp/adb-arm64 \
-  https://github.com/nex4dev/platform-tools-arm64/releases/download/v34.0.4/adb-linux-arm64 && \
-  chmod +x /tmp/adb-arm64 && \
-  mv /tmp/adb-arm64 $ANDROID_HOME/platform-tools/adb
+    https://github.com/nex4dev/platform-tools-arm64/releases/download/v34.0.3/adb-arm64 && \
+    chmod +x /tmp/adb-arm64 && \
+    mv /tmp/adb-arm64 $ANDROID_HOME/platform-tools/adb
 # --------------------------------------------------------------------
 
 # Install nodejs, npm, and appium
