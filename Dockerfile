@@ -4,24 +4,25 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV DISPLAY=:0
 ENV XAUTHORITY=/root/.Xauthority
 
-# Install system dependencies
+# Install system dependencies and ADB/Fastboot for ARM64
 RUN apt-get update && apt-get install -y \
-   curl \
-   wget \
-   sudo \
-   bash \
-   tzdata \
-   unzip \
-   xvfb \
-   zip \
-   ffmpeg \
-   gnupg \
-   libgconf-2-4 \
-   libqt5webkit5 \
-   openjdk-21-jdk \
-   build-essential \
-   git \
-   && rm -rf /var/lib/apt/lists/*
+    curl \
+    wget \
+    sudo \
+    bash \
+    tzdata \
+    unzip \
+    xvfb \
+    zip \
+    ffmpeg \
+    gnupg \
+    libgconf-2-4 \
+    libqt5webkit5 \
+    openjdk-21-jdk \
+    build-essential \
+    git \
+    android-sdk-platform-tools \
+    && rm -rf /var/lib/apt/lists/*
 
 ARG USER_PASS=appiumtest
 RUN groupadd appiumuser --gid 1401 && \
@@ -52,21 +53,19 @@ RUN wget -O tools.zip https://dl.google.com/android/repository/${SDK_VERSION}.zi
     mv ${ANDROID_DOWNLOAD_PATH} ${ANDROID_TOOL_HOME}/tools
 ENV PATH=$PATH:${ANDROID_TOOL_HOME}/tools:${ANDROID_TOOL_HOME}/tools/bin
 
-# Install SDK components (including platform-tools and build-tools)
+# Install SDK components EXCEPT platform-tools (already present as arm64 via apt)
 RUN bash -c "mkdir -p ~/.android && \
     touch ~/.android/repositories.cfg && \
-    echo y | sdkmanager 'platform-tools' && \
     echo y | sdkmanager 'build-tools;$ANDROID_BUILD_TOOLS_VERSION'" && \
     mv ~/.android .android && \
     chown -R 1400:1401 .android
+
 ENV PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools
 
-# ----------- ARM64 adb binary replacement (fix for RPi4) ------------
-RUN wget -O /tmp/adb-arm64 \
-    https://github.com/nex4dev/platform-tools-arm64/releases/download/v34.0.3/adb-arm64 && \
-    chmod +x /tmp/adb-arm64 && \
-    mv /tmp/adb-arm64 $ANDROID_HOME/platform-tools/adb
-# --------------------------------------------------------------------
+# Symlink native adb/fastboot to Android SDK structure for compatibility
+RUN mkdir -p $ANDROID_HOME/platform-tools && \
+    ln -sf /usr/lib/android-sdk/platform-tools/adb $ANDROID_HOME/platform-tools/adb && \
+    ln -sf /usr/lib/android-sdk/platform-tools/fastboot $ANDROID_HOME/platform-tools/fastboot
 
 # Install nodejs, npm, and appium
 ENV NODE_VERSION=22
