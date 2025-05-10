@@ -220,9 +220,9 @@ install_maven_and_java() {
 main() {
     install_nvm
     install_node_and_npm
-    install_appium
-    install_sdkman
-    install_maven_and_java
+    #install_appium
+    #install_sdkman
+    #install_maven_and_java
     print_msg "All installations completed successfully."
 }
 
