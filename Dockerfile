@@ -84,16 +84,10 @@ RUN chown -R 1400:1401 /opt/node /usr/local/bin/node /usr/local/bin/npm /usr/loc
 USER 1400:1401
 
 # Install basic Android drivers via Appium CLI
-ENV APPIUM_DRIVER_ESPRESSO_VERSION="4.0.5"
-ENV APPIUM_DRIVER_FLUTTER_VERSION="2.13.0"
-ENV APPIUM_DRIVER_FLUTTER_INTEGRATION_VERSION="1.1.3"
-ENV APPIUM_DRIVER_GECKO_VERSION="1.4.2"
 ENV APPIUM_DRIVER_UIAUTOMATOR2_VERSION="4.0.2"
-RUN appium driver install --source=npm appium-espresso-driver@${APPIUM_DRIVER_ESPRESSO_VERSION} && \
-    appium driver install --source=npm appium-flutter-driver@${APPIUM_DRIVER_FLUTTER_VERSION} && \
-    appium driver install --source=npm appium-flutter-integration-driver@${APPIUM_DRIVER_FLUTTER_INTEGRATION_VERSION} && \
-    appium driver install --source=npm appium-geckodriver@${APPIUM_DRIVER_GECKO_VERSION} && \
-    appium driver install --source=npm appium-uiautomator2-driver@${APPIUM_DRIVER_UIAUTOMATOR2_VERSION}
+# Only install uiautomator2 Appium driver
+ENV APPIUM_DRIVER_UIAUTOMATOR2_VERSION="4.0.2"
+RUN appium driver install --source=npm appium-uiautomator2-driver@${APPIUM_DRIVER_UIAUTOMATOR2_VERSION}
 
 EXPOSE 4723
 
