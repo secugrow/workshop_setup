@@ -142,11 +142,11 @@ install_maven_and_java() {
     if command -v java >/dev/null 2>&1; then
         print_msg "Java is already installed"
     else
-        print_msg "Installing Java 21 via SDKMAN..."
-        # Install Java 21
-        sdk install java 21.0.6-librca || print_msg "Java 21 is already installed."
+        print_msg "Installing Java 23 via SDKMAN..."
+        # Install Java 23
+        sdk install java 23.0.2-librca || print_msg "Java 23 is already installed."
 
-        # Set Java 21 as the default version
+        # Set Java 23 as the default version
         sdk default java $(ls -A1 $SDKMAN_CANDIDATES_DIR/java | head -n 1)
     fi
 
@@ -191,7 +191,7 @@ install_maven_and_java() {
     #source $SHELL_CONFIG_FILE
 
     if [ -z "$(java -version 2>&1 | grep '21')" ]; then
-        print_err_msg "Error: Java 21 was not installed or set properly or you need to source your $SHELL_CONFIG_FILE"
+        print_err_msg "Error: Java 23 was not installed or set properly or you need to source your $SHELL_CONFIG_FILE"
         exit 1
     fi
 
@@ -220,9 +220,9 @@ install_maven_and_java() {
 main() {
     install_nvm
     install_node_and_npm
-    #install_appium
-    #install_sdkman
-    #install_maven_and_java
+    install_appium
+    install_sdkman
+    install_maven_and_java
     print_msg "All installations completed successfully."
 }
 
