@@ -98,6 +98,20 @@ java -jar selenium-server-4.30.0.jar standalone
 ```
 
 
+### appium plugins (i.e.: devtools-plugin) nachtraeglich installieren
+
+quelle: https://github.com/mykola-mokhnach/appium-devtools-plugin
+
+```
+appium plugin install --source npm appium-devtools-plugin
+```
+
+### starte appium mit spezifischen plugins
+
+```
+appium --use-plugins=devtools,element-wait
+```
+
 
 ---
 
