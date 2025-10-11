@@ -1,0 +1,18 @@
+{
+  "server": {
+    "port": 4723,
+    "allow-cors": true,
+    "use-plugins": ["devtools"],
+    "plugin": {
+      "devtools": {}
+    },
+    "allow-insecure": ["chromedriver_autodownload"],
+    "relaxed-security": true,
+    "driver": {
+      "uiautomator2": {
+        "chromedriver-executable-dir": "~/secugrow/chromedrivers",
+        "chromedriverStorageDir": "~/secugrow/chromedrivers" 
+      }
+    }
+  }
+}
