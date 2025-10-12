@@ -4,7 +4,7 @@
 
 This documentation covers the complete setup environment for the mobile testing workshop, including:
 - Automated environment setup script (`setup_environment.sh`)
-- Docker containerized environment (`Dockerfile.plain`)
+- Docker containerized environment (`Dockerfile`)
 - Configuration files and dependencies
 - Build and deployment instructions
 
@@ -43,13 +43,15 @@ The workshop environment provides a complete mobile testing stack with the follo
 
 ```
 workshop_setup/
-├── setup_environment.sh       # Main installation script
-├── Dockerfile.plain           # Docker container definition
+├── setup_environment.sh       # Unified installation script
 ├── appium.conf.json          # Appium server configuration
-├── Dockerfile                # Original production Dockerfile
-├── install_android_sdk.sh    # Legacy Android SDK installer
-├── install_tools.sh          # Legacy tools installer
-└── SETUP_DOCUMENTATION.md    # This file
+├── Dockerfile                # Docker container definition (runs setup at build time)
+├── SETUP_DOCUMENTATION.md    # This file
+├── README.md                 # Quick start guide
+├── README.plain.md           # Legacy README
+└── legacy/                   # Legacy installation scripts
+    ├── install_android_sdk.sh
+    └── install_tools.sh
 ```
 
 ---
@@ -59,8 +61,26 @@ workshop_setup/
 ### Purpose
 
 The `setup_environment.sh` script is a unified, automated installation script that sets up the complete workshop environment. It can be used both:
-- **Inside Docker containers** (automated during container startup)
+- **Inside Docker containers** (automated during container build time)
 - **On bare metal Ubuntu machines** (manual installation)
+
+### Output Functions
+
+The script uses color-coded emoji output for better readability:
+
+```bash
+# Color definitions
+RED=$(tput setaf 1)      # Error messages
+GREEN=$(tput setaf 2)    # Success messages
+YELLOW=$(tput setaf 3)   # Warning messages
+BLUE=$(tput setaf 4)     # Info messages
+
+# Helper functions
+ok()    # ✔ Green checkmark for success
+warn()  # ⚠ Yellow warning symbol
+error() # ✖ Red X for errors
+info()  # ℹ Blue info symbol
+```
 
 ### Script Flow
 
@@ -211,7 +231,7 @@ android_sdk/
 ANDROID_SDK_ROOT=<pwd>/android_sdk
 ANDROID_CMDLINE_TOOLS=$ANDROID_SDK_ROOT/cmdline-tools/latest
 ANDROID_PLATFORM_TOOLS=$ANDROID_SDK_ROOT/platform-tools
-ANDROID_BUILD_TOOLS=$ANDROID_SDK_ROOT/build-tools/34.0.0
+ANDROID_BUILD_TOOLS=$(ls -d $ANDROID_SDK_ROOT/build-tools/* 2>/dev/null | head -1)
 PATH=$ANDROID_CMDLINE_TOOLS/bin:$ANDROID_PLATFORM_TOOLS:$ANDROID_BUILD_TOOLS:$PATH
 ```
 
@@ -221,13 +241,19 @@ PATH=$ANDROID_CMDLINE_TOOLS/bin:$ANDROID_PLATFORM_TOOLS:$ANDROID_BUILD_TOOLS:$PA
 # Installs required Android SDK components
 - platform-tools (adb, fastboot)
 - platforms;android-33 (Android 13 platform)
-- build-tools;34.0.0 (Build tools)
+- build-tools (latest version detected automatically)
 ```
 
 **Process:**
 - Sources SDKMAN to access Java
+- Queries sdkmanager to get latest build-tools version
+- Falls back to version 34.0.0 if detection fails
 - Runs sdkmanager with auto-accept
+- Exports build-tools version for later use
 - Verifies installation success
+
+**Dynamic Version Detection:**
+The script automatically detects and installs the latest available build-tools version instead of hardcoding a version number.
 
 ### Shell Detection
 
@@ -376,12 +402,54 @@ USER appiumuser
 ---
 
 ```dockerfile
-CMD ["/bin/bash", "-c", "./setup_environment.sh && /bin/bash"]
+RUN ./setup_environment.sh
+```
+**Build-Time Setup:**
+- Runs the complete setup script during `docker build`
+- Installs NVM, Node.js, Appium, SDKMAN, Java, Maven, Android SDK
+- All tools baked into the image
+- Container startup is instant
+
+**Why at build time?**
+- ✅ Faster container startup (no setup delay)
+- ✅ Consistent environment (setup runs once)
+- ✅ Easier debugging (build fails early if issues)
+- ❌ Larger image size (~2-3GB)
+
+---
+
+```dockerfile
+ENV NVM_DIR=/home/appiumuser/.nvm \
+    SDKMAN_DIR=/home/appiumuser/.sdkman \
+    ANDROID_SDK_ROOT=/home/appiumuser/android_sdk
+```
+**Environment Variables:**
+- Sets paths for installed tools
+- Makes tools accessible in container
+- Required for interactive shells
+
+---
+
+```dockerfile
+ENV PATH="${NVM_DIR}/versions/node/$(ls ${NVM_DIR}/versions/node 2>/dev/null | head -1)/bin:${SDKMAN_DIR}/candidates/java/current/bin:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools:$(ls -d ${ANDROID_SDK_ROOT}/build-tools/* 2>/dev/null | head -1):${PATH}"
+```
+**PATH Configuration:**
+- Adds Node.js binaries (dynamically determined version)
+- Adds Java binaries from SDKMAN
+- Adds Android SDK tools (cmdline-tools, platform-tools)
+- Adds build-tools (dynamically determined latest version)
+
+**Dynamic version detection:** Uses `ls` to automatically find installed versions, no hardcoded paths
+
+---
+
+```dockerfile
+CMD ["/bin/bash"]
 ```
 **Container Startup:**
-1. Runs `setup_environment.sh`
-2. Opens interactive bash shell after setup
-3. Container stays running for testing
+- Opens interactive bash shell immediately
+- All tools already installed and available
+- No setup delay
 
 **Alternative for Production:**
 ```dockerfile
@@ -473,7 +541,8 @@ CMD ["appium", "--config", "/home/appiumuser/.appium/appium.conf.json"]
 
 - Docker installed and running
 - Docker daemon accessible
-- Sufficient disk space (~2GB)
+- Sufficient disk space (~3-4GB for final image)
+- Good internet connection (downloads ~500MB during build)
 
 ### Building the Docker Image
 
@@ -486,37 +555,69 @@ cd /path/to/secugrow/workshop_setup
 #### Build Command
 
 ```bash
-docker build -f Dockerfile.plain -t workshop-env:latest .
+docker build -t workshop-env:latest .
 ```
 
 **Command Breakdown:**
 - `docker build`: Build a Docker image
-- `-f Dockerfile.plain`: Use this specific Dockerfile
 - `-t workshop-env:latest`: Tag image as "workshop-env" with "latest" version
-- `.`: Build context is current directory
+- `.`: Build context is current directory (uses `Dockerfile` by default)
 
 #### Build Process
 
 The build process will:
 1. Pull Ubuntu 22.04 base image
-2. Install system packages
-3. Create appiumuser
-4. Copy setup script and config
-5. Set permissions
+2. Install system packages (curl, wget, unzip, etc.)
+3. Create appiumuser with sudo privileges
+4. Copy setup script and Appium config
+5. **Run complete setup script** (takes 5-10 minutes):
+   - Install NVM and Node.js
+   - Install Appium globally
+   - Configure Appium with custom settings
+   - Install SDKMAN
+   - Install Java 23 and Maven 3.9.5
+   - Download and extract Android SDK (latest version)
+   - Install Android SDK components (platform-tools, build-tools)
+6. Set environment variables
+7. Configure PATH with all tools
+
+**Build Time:** Expect 5-15 minutes depending on internet speed
 
 **Expected Output:**
 ```
-[+] Building 45.2s (10/10) FINISHED
- => [internal] load build definition from Dockerfile.plain
+[+] Building 456.3s (12/12) FINISHED
+ => [internal] load build definition from Dockerfile
  => [internal] load .dockerignore
  => [internal] load metadata for docker.io/library/ubuntu:22.04
- => [1/5] FROM docker.io/library/ubuntu:22.04
- => [2/5] RUN apt-get update && apt-get install -y...
- => [3/5] RUN useradd -m -s /bin/bash appiumuser...
- => [4/5] COPY setup_environment.sh appium.conf.json ./
- => [5/5] RUN chmod +x setup_environment.sh...
+ => [1/7] FROM docker.io/library/ubuntu:22.04
+ => [2/7] RUN apt-get update && apt-get install -y...
+ => [3/7] RUN useradd -m -s /bin/bash appiumuser...
+ => [4/7] COPY setup_environment.sh appium.conf.json ./
+ => [5/7] RUN chmod +x setup_environment.sh...
+ => [6/7] RUN ./setup_environment.sh                      # <- This takes 5-10 minutes
+ => [7/7] ENV PATH=...
  => exporting to image
  => => naming to docker.io/library/workshop-env:latest
+```
+
+During step [6/7], you'll see colorful output:
+```
+ℹ Starting complete environment setup...
+ℹ Checking prerequisites...
+✔ Prerequisites confirmed
+ℹ Installing NVM...
+✔ NVM installed successfully
+ℹ Installing Node.js and npm using NVM...
+✔ Node.js and npm installed successfully
+ℹ Installing the latest version of Appium...
+✔ Appium installed successfully. Version: 2.x.x
+...
+✔ All installations completed successfully
+✔ Setup complete! All tools are now available.
+======================================
+    Installed Component Versions
+======================================
+...
 ```
 
 #### Verify Image
@@ -527,8 +628,10 @@ docker images | grep workshop-env
 
 **Expected Output:**
 ```
-workshop-env   latest   a1b2c3d4e5f6   2 minutes ago   450MB
+workshop-env   latest   a1b2c3d4e5f6   2 minutes ago   2.8GB
 ```
+
+**Note:** Image size is larger (~2-3GB) because all tools are pre-installed
 
 ---
 
@@ -616,22 +719,15 @@ docker run -d \
 
 When the container starts, it will:
 
-1. **Run setup_environment.sh** (first time or if environment not persisted)
-2. **Display progress messages**:
-   ```
-   ::: Starting complete environment setup... :::
-   ::: Checking prerequisites... :::
-   ::: Prerequisites confirmed. :::
-   ::: Installing NVM... :::
-   ...
-   ```
-3. **Install all components** (takes 5-10 minutes on first run)
-4. **Display version summary**
-5. **Open interactive bash shell**
+1. **Open interactive bash shell immediately** - No setup delay!
+2. All tools are already installed and available
+3. Environment variables already configured
+
+**Why so fast?** Setup ran during `docker build`, not at container startup.
 
 ### Using the Environment
 
-Once the setup completes, you'll have access to:
+You immediately have access to all tools:
 
 ```bash
 # Check Node.js
@@ -988,7 +1084,7 @@ yes | "$ANDROID_CMDLINE_TOOLS/bin/sdkmanager" \
   "platform-tools" \
   "platforms;android-33" \
   "platforms;android-34" \           # Add Android 14
-  "build-tools;34.0.0" \
+  "$LATEST_BUILD_TOOLS" \            # Uses dynamically detected version
   "system-images;android-33;google_apis;x86_64"  # Add emulator image
 ```
 
@@ -1007,9 +1103,10 @@ docker run -d \
 ```
 
 **Benefits:**
-- Setup runs only once
 - Data persists across container restarts
-- Faster container startup
+- No need to reconfigure on container recreation
+
+**Note:** With build-time setup, the environment is already configured in the image, so volumes are mainly useful for persisting user data, not setup state.
 
 ---
 
@@ -1020,12 +1117,17 @@ docker run -d \
 #### Use Build Cache
 
 ```bash
-# First build (slow)
-docker build -f Dockerfile.plain -t workshop-env:latest .
+# First build (slow, 5-15 minutes)
+docker build -t workshop-env:latest .
 
-# Subsequent builds use cache (fast)
-docker build -f Dockerfile.plain -t workshop-env:latest .
+# Subsequent builds use cache (fast, <1 minute if no changes)
+docker build -t workshop-env:latest .
 ```
+
+**Cache Benefits:**
+- Docker caches each layer
+- Only re-runs changed steps
+- Modifying `setup_environment.sh` only re-runs from that step onwards
 
 #### Multi-stage Builds (Advanced)
 
@@ -1171,7 +1273,7 @@ JAVA_HOME=~/.sdkman/candidates/java/current
 ANDROID_SDK_ROOT=<path>/android_sdk
 ANDROID_CMDLINE_TOOLS=$ANDROID_SDK_ROOT/cmdline-tools/latest
 ANDROID_PLATFORM_TOOLS=$ANDROID_SDK_ROOT/platform-tools
-ANDROID_BUILD_TOOLS=$ANDROID_SDK_ROOT/build-tools/34.0.0
+ANDROID_BUILD_TOOLS=$(ls -d $ANDROID_SDK_ROOT/build-tools/* 2>/dev/null | head -1)
 
 # PATH additions
 PATH=$NVM_DIR/versions/node/<version>/bin:$PATH

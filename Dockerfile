@@ -22,15 +22,23 @@ RUN useradd -m -s /bin/bash appiumuser && \
 # Set working directory
 WORKDIR /home/appiumuser
 
-# Copy the installation script and Appium config
-COPY setup_environment.sh appium.conf.json ./
+# Copy the installation script, startup script, and Appium config
+COPY setup_environment.sh start-appium.sh appium.conf.json ./
 
-# Make script executable
-RUN chmod +x setup_environment.sh && \
-    chown appiumuser:appiumuser setup_environment.sh appium.conf.json
+# Make scripts executable and change ownership
+RUN chmod +x setup_environment.sh start-appium.sh && \
+    chown appiumuser:appiumuser setup_environment.sh start-appium.sh appium.conf.json
 
 # Switch to test user
 USER appiumuser
 
-# Default command runs installation script then opens bash shell
-CMD ["/bin/bash", "-c", "./setup_environment.sh && /bin/bash"]
+# Run the setup script during build time
+RUN ./setup_environment.sh
+
+# Set environment variables for interactive shells
+ENV NVM_DIR=/home/appiumuser/.nvm \
+    SDKMAN_DIR=/home/appiumuser/.sdkman \
+    ANDROID_SDK_ROOT=/home/appiumuser/android_sdk
+
+# start appium
+CMD ["./start-appium.sh"]

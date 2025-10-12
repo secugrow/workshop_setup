@@ -6,12 +6,12 @@
     "plugin": {
       "devtools": {}
     },
-    "allow-insecure": ["chromedriver_autodownload"],
+    "allow-insecure": ["chromedriver_autodownload", "adb_shell"],
     "relaxed-security": true,
     "driver": {
       "uiautomator2": {
-        "chromedriver-executable-dir": "~/secugrow/chromedrivers",
-        "chromedriverStorageDir": "~/secugrow/chromedrivers" 
+        "chromedriver-executable-dir": "/home/appiumuser/secugrow/chromedrivers",
+        "chromedriverStorageDir": "/home/appiumuser/secugrow/chromedrivers"
       }
     }
   }
