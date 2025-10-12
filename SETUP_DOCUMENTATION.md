@@ -44,14 +44,16 @@ The workshop environment provides a complete mobile testing stack with the follo
 ```
 workshop_setup/
 ├── setup_environment.sh       # Unified installation script
+├── start-appium.sh            # Appium server startup script with validation
 ├── appium.conf.json          # Appium server configuration
 ├── Dockerfile                # Docker container definition (runs setup at build time)
 ├── SETUP_DOCUMENTATION.md    # This file
 ├── README.md                 # Quick start guide
-├── README.plain.md           # Legacy README
 └── legacy/                   # Legacy installation scripts
     ├── install_android_sdk.sh
-    └── install_tools.sh
+    ├── install_tools.sh
+    ├── README.md
+    └── Dockerfile
 ```
 
 ---
@@ -299,11 +301,60 @@ Android SDK: Installed at /path/to/android_sdk
 
 ---
 
+## Appium Startup Script (`start-appium.sh`)
+
+### Purpose
+
+The `start-appium.sh` script is the container entry point that automatically starts the Appium server with proper environment configuration and validation.
+
+### Script Features
+
+#### Environment Loading
+```bash
+# Load all environment configurations
+source ~/.bashrc
+source ~/.nvm/nvm.sh 
+source ~/.sdkman/bin/sdkman-init.sh
+```
+
+#### Pre-flight Validation
+- **Appium availability check**: Verifies Appium is installed and accessible
+- **Driver validation**: Lists all installed drivers and specifically checks for UIAutomator2
+- **Configuration display**: Shows the contents of appium.conf.json if present
+- **Error handling**: Provides detailed error messages if components are missing
+
+#### Automatic Server Startup
+- **Configuration detection**: Automatically loads ~/.appium/appium.conf.json if present
+- **Fallback parameters**: Uses command-line parameters if no config file found
+- **Network binding**: Starts server on 0.0.0.0 to accept external connections
+- **Process replacement**: Uses `exec` to replace the script process with Appium server
+
+### Script Output Example
+```
+✓ Appium found: 3.1.0
+Checking installed Appium drivers...
+✓ UIAutomator2 driver is installed
+✓ Found Appium configuration file: /home/appiumuser/.appium/appium.conf.json
+Configuration contents:
+{
+  "server": {
+    "port": 4723,
+    "allow-cors": true,
+    ...
+  }
+}
+--- End of configuration ---
+Starting Appium server with configuration file (auto-loaded)...
+[Appium] Welcome to Appium v3.1.0
+```
+
+---
+
 ## Docker Configuration
 
-### Dockerfile.plain Overview
+### Dockerfile Overview
 
-The `Dockerfile.plain` creates a minimal Ubuntu environment that runs the setup script on container startup.
+The `Dockerfile` creates a complete Ubuntu environment with all tools pre-installed at build time, and includes an automatic Appium server startup script.
 
 ### Dockerfile Breakdown
 
@@ -372,21 +423,22 @@ WORKDIR /home/appiumuser
 ---
 
 ```dockerfile
-COPY setup_environment.sh appium.conf.json ./
+COPY setup_environment.sh start-appium.sh appium.conf.json ./
 ```
 **File Copying:**
 - Copies setup script to container
+- Copies Appium startup script to container
 - Copies Appium configuration
 - Files owned by root initially
 
 ---
 
 ```dockerfile
-RUN chmod +x setup_environment.sh && \
-    chown appiumuser:appiumuser setup_environment.sh appium.conf.json
+RUN chmod +x setup_environment.sh start-appium.sh && \
+    chown appiumuser:appiumuser setup_environment.sh start-appium.sh appium.conf.json
 ```
 **Permissions:**
-- Makes script executable
+- Makes both scripts executable
 - Changes ownership to appiumuser
 - Ensures user can read config file
 
@@ -444,17 +496,17 @@ ENV PATH="${NVM_DIR}/versions/node/$(ls ${NVM_DIR}/versions/node 2>/dev/null | h
 ---
 
 ```dockerfile
-CMD ["/bin/bash"]
+CMD ["./start-appium.sh"]
 ```
 **Container Startup:**
-- Opens interactive bash shell immediately
+- Automatically starts Appium server on port 4723
 - All tools already installed and available
-- No setup delay
+- No setup delay, server ready immediately
 
-**Alternative for Production:**
-```dockerfile
-CMD ["appium", "--config", "/home/appiumuser/.appium/appium.conf.json"]
-```
+**Server Features:**
+- Loads environment configurations automatically
+- Validates driver installations
+- Displays configuration and status information
 
 ---
 
@@ -471,12 +523,12 @@ CMD ["appium", "--config", "/home/appiumuser/.appium/appium.conf.json"]
     "plugin": {
       "devtools": {}
     },
-    "allow-insecure": ["chromedriver_autodownload"],
+    "allow-insecure": ["chromedriver_autodownload", "adb_shell"],
     "relaxed-security": true,
     "driver": {
       "uiautomator2": {
-        "chromedriver-executable-dir": "~/secugrow/chromedrivers",
-        "chromedriverStorageDir": "~/secugrow/chromedrivers"
+        "chromedriver-executable-dir": "/home/appiumuser/secugrow/chromedrivers",
+        "chromedriverStorageDir": "/home/appiumuser/secugrow/chromedrivers"
       }
     }
   }
@@ -505,10 +557,11 @@ CMD ["appium", "--config", "/home/appiumuser/.appium/appium.conf.json"]
 #### Security Settings
 
 ```json
-"allow-insecure": ["chromedriver_autodownload"]
+"allow-insecure": ["chromedriver_autodownload", "adb_shell"]
 ```
 - **chromedriver_autodownload**: Automatically downloads matching chromedriver versions
-- **Workshop Only**: Should be disabled in production
+- **adb_shell**: Allows execution of adb shell commands through Appium
+- **Workshop Only**: Both features should be disabled in production
 
 ⚠️ **Security Warning:** `relaxed-security` and `allow-insecure` are for testing only!
 
@@ -517,8 +570,8 @@ CMD ["appium", "--config", "/home/appiumuser/.appium/appium.conf.json"]
 ```json
 "driver": {
   "uiautomator2": {
-    "chromedriver-executable-dir": "~/secugrow/chromedrivers",
-    "chromedriverStorageDir": "~/secugrow/chromedrivers"
+    "chromedriver-executable-dir": "/home/appiumuser/secugrow/chromedrivers",
+    "chromedriverStorageDir": "/home/appiumuser/secugrow/chromedrivers"
   }
 }
 ```
@@ -529,7 +582,7 @@ CMD ["appium", "--config", "/home/appiumuser/.appium/appium.conf.json"]
 - Persists across Appium versions
 
 **Chromedriver Storage:**
-- Location: `~/secugrow/chromedrivers`
+- Location: `/home/appiumuser/secugrow/chromedrivers` (Docker) or `~/secugrow/chromedrivers` (bare metal)
 - Created by `setup_environment.sh`
 - Caches downloaded chromedrivers
 
@@ -1009,7 +1062,7 @@ docker system df
 docker system prune -a
 
 # Rebuild with no cache
-docker build --no-cache -f Dockerfile.plain -t workshop-env:latest .
+docker build --no-cache -t workshop-env:latest .
 ```
 
 #### 7. Container Exits Immediately
