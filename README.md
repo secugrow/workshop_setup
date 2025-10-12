@@ -72,14 +72,14 @@ docker run -it --rm --privileged -p 4723:4723 -v /dev/bus/usb:/dev/bus/usb works
 
 `setup_environment.sh` works on both bare metal Ubuntu and Docker containers:
 
-✅ **Color-coded output** - Uses tput with ANSI fallback for Docker builds
-✅ **Smart terminal detection** - Automatically handles missing TERM variable
-✅ **Package manager support** - Works with apt-get and yum
-✅ **Shell detection** - Configures bash/zsh appropriately
-✅ **Dynamic version detection** - Automatically installs latest Android build-tools
-✅ **User-level installation** - Installs to $HOME (NVM, SDKMAN, Android SDK)
-✅ **Sudo support** - Uses sudo only for system packages
-✅ **Idempotent** - Safe to run multiple times
+✅ **Color-coded output** - Uses tput with ANSI fallback for Docker builds  
+✅ **Smart terminal detection** - Automatically handles missing TERM variable  
+✅ **Package manager support** - Works with apt-get and yum  
+✅ **Shell detection** - Configures bash/zsh appropriately  
+✅ **Dynamic version detection** - Automatically installs latest Android build-tools  
+✅ **User-level installation** - Installs to $HOME (NVM, SDKMAN, Android SDK)  
+✅ **Sudo support** - Uses sudo only for system packages  
+✅ **Idempotent** - Safe to run multiple times  
 
 ### Docker Build
 
