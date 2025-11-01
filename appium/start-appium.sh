@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Set TERM for Docker environment
+export TERM=${TERM:-xterm}
+
 # Color definitions and helper functions
 RED=$(tput setaf 1)
 GREEN=$(tput setaf 2)
@@ -34,10 +37,18 @@ ok "Appium found: $(appium --version)"
 
 # List installed drivers
 section "Checking installed Appium drivers..."
-appium driver list
+DRIVER_LIST=$(appium driver list 2>&1)
 
-# Check if UIAutomator2 is specifically installed
-if appium driver list | grep -q "uiautomator2"; then
+# Debug: show the raw output
+info "Raw driver list output:"
+echo "$DRIVER_LIST"
+
+# Debug: show what grep finds
+info "Searching for uiautomator2 lines:"
+echo "$DRIVER_LIST" | grep "uiautomator2" || info "No matches found"
+
+# Check if UIAutomator2 is installed
+if echo "$DRIVER_LIST" | grep -q "uiautomator2.*\[installed"; then
     ok "UIAutomator2 driver is installed"
 else
     error "UIAutomator2 driver is NOT installed"

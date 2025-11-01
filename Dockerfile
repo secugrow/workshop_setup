@@ -23,7 +23,7 @@ RUN useradd -m -s /bin/bash appiumuser && \
 WORKDIR /home/appiumuser
 
 # Copy the installation script, startup script, and Appium config
-COPY setup_environment.sh start-appium.sh appium.conf.json ./
+COPY setup_environment.sh ./
 
 COPY appium/ ./appium/
 
@@ -40,7 +40,8 @@ RUN ./setup_environment.sh
 # Set environment variables for interactive shells
 ENV NVM_DIR=/home/appiumuser/.nvm \
     SDKMAN_DIR=/home/appiumuser/.sdkman \
-    ANDROID_SDK_ROOT=/home/appiumuser/android_sdk
+    ANDROID_SDK_ROOT=/home/appiumuser/android_sdk \
+    TERM=xterm
 
 # start appium
-CMD ["./start-appium.sh"]
+CMD ["./appium/start-appium.sh"]
