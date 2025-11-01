@@ -230,8 +230,6 @@ install_sdkman() {
                sudo apt-get update && sudo apt-get install -y zip unzip
             elif command -v yum >/dev/null 2>&1; then
                sudo yum install -y zip unzip
-            elif command -v brew >/dev/null 2>&1; then
-               brew install zip unzip
             else
                error "Unsupported package manager. Please install zip and unzip manually."
                exit 1

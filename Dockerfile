@@ -25,9 +25,11 @@ WORKDIR /home/appiumuser
 # Copy the installation script, startup script, and Appium config
 COPY setup_environment.sh start-appium.sh appium.conf.json ./
 
+COPY appium/ ./appium/
+
 # Make scripts executable and change ownership
-RUN chmod +x setup_environment.sh start-appium.sh && \
-    chown appiumuser:appiumuser setup_environment.sh start-appium.sh appium.conf.json
+RUN chmod +x setup_environment.sh appium/start-appium.sh && \
+    chown appiumuser:appiumuser setup_environment.sh appium/
 
 # Switch to test user
 USER appiumuser
