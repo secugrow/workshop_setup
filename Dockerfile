@@ -1,36 +1,47 @@
-# Start with a minimal Ubuntu image
 FROM ubuntu:22.04
 
-# Set non-interactive front-end for installing dependencies
+# Set non-interactive frontend to avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
-# for using chrome on your host machine
-# ENV DISPLAY=:0
-# ENV XAUTHORITY=/root/.Xauthority
 
-# 🔥🔥 TODO install chrome in docker container 🔥🔥
-
-# Install required dependencies
+# Update package list and install essential dependencies
 RUN apt-get update && apt-get install -y \
-   curl \
-   wget \
-   sudo \
-   bash \
-   tzdata \
-   gnupg \
-   build-essential \
-   git && \
-   rm -rf /var/lib/apt/lists/*
+    curl \
+    wget \
+    unzip \
+    zip \
+    sudo \
+    bash \
+    ca-certificates \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set up a working directory
-WORKDIR /app
+# Create a test user with sudo privileges
+RUN useradd -m -s /bin/bash appiumuser && \
+    echo "appiumuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
-# Copy the scripts into the container
-COPY install_tools.sh /app/install_tools.sh
-COPY install_android_sdk.sh /app/install_android_sdk.sh
+# Set working directory
+WORKDIR /home/appiumuser
 
-# Make the script executable
-RUN chmod +x /app/install_tools.sh
-RUN chmod +x /app/install_android_sdk.sh
+# Copy the installation script, startup script, and Appium config
+COPY setup_environment.sh ./
 
-# Run bash as the default shell
-CMD ["/bin/bash"]
+COPY appium/ ./appium/
+
+# Make scripts executable and change ownership
+RUN chmod +x setup_environment.sh appium/start-appium.sh && \
+    chown appiumuser:appiumuser setup_environment.sh appium/
+
+# Switch to test user
+USER appiumuser
+
+# Run the setup script during build time
+RUN ./setup_environment.sh
+
+# Set environment variables for interactive shells
+ENV NVM_DIR=/home/appiumuser/.nvm \
+    SDKMAN_DIR=/home/appiumuser/.sdkman \
+    ANDROID_SDK_ROOT=/home/appiumuser/android_sdk \
+    TERM=xterm
+
+# start appium
+CMD ["./appium/start-appium.sh"]

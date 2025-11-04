@@ -16,6 +16,32 @@ print_err_msg() {
     printf "$(tput setaf 1)-> %s <-\n$(tput sgr0)" "$1"
 }
 
+# Install prerequisites
+install_prerequisites() {
+    print_msg "Checking prerequisites..."
+
+    # Check if curl is installed
+    if ! command -v curl &> /dev/null; then
+        print_msg "curl could not be found, installing..."
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            if command -v apt-get >/dev/null 2>&1; then
+                sudo apt-get update
+                sudo apt-get install -y curl
+            elif command -v yum >/dev/null 2>&1; then
+                sudo yum install -y curl
+            else
+                print_err_msg "Error: Unsupported package manager. Please install curl manually."
+                exit 1
+            fi
+        else
+            print_err_msg "Error: Unsupported OS. Please install curl manually."
+            exit 1
+        fi
+    fi
+
+    print_msg "Prerequisites confirmed."
+}
+
 # Install NVM (Node Version Manager)
 install_nvm() {
     if command -v nvm >/dev/null 2>&1; then
@@ -142,11 +168,11 @@ install_maven_and_java() {
     if command -v java >/dev/null 2>&1; then
         print_msg "Java is already installed"
     else
-        print_msg "Installing Java 21 via SDKMAN..."
-        # Install Java 21
-        sdk install java 21.0.6-librca || print_msg "Java 21 is already installed."
+        print_msg "Installing Java 23 via SDKMAN..."
+        # Install Java 23
+        sdk install java 23.0.2-librca || print_msg "Java 23 is already installed."
 
-        # Set Java 21 as the default version
+        # Set Java 23 as the default version
         sdk default java $(ls -A1 $SDKMAN_CANDIDATES_DIR/java | head -n 1)
     fi
 
@@ -191,7 +217,7 @@ install_maven_and_java() {
     #source $SHELL_CONFIG_FILE
 
     if [ -z "$(java -version 2>&1 | grep '21')" ]; then
-        print_err_msg "Error: Java 21 was not installed or set properly or you need to source your $SHELL_CONFIG_FILE"
+        print_err_msg "Error: Java 23 was not installed or set properly or you need to source your $SHELL_CONFIG_FILE"
         exit 1
     fi
 
@@ -218,6 +244,7 @@ install_maven_and_java() {
 
 # Main script execution
 main() {
+    install_prerequisites
     install_nvm
     install_node_and_npm
     install_appium

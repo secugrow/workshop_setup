@@ -1,91 +1,97 @@
-# Workshop Setup
-
-# Prerequisites
-Install Java for your OS (recommended Version 21 or above)
-
-make the script executable via `chmod u+x install_tools.sh` and execute it afterwards via `./install_tools.sh`
-
-
-### Android SDK and build-tools
-
-make the script executable via `chmod u+x install_android_sdk.sh` and execute it afterwards via `./install_android_sdk.sh`.
-It will download all necessary files and edit your `~/.bashrc` or `~/.zshrc` or `~/.profile` with following env-variables.
+### Build Image
 
 ```shell
+# Build locally
+docker build -t workshop-env:latest .
 
-export ANDROID_HOME=$HOME/installed/android_sdk
-export ANDROID_PLATFORM_TOOLS=$ANDROID_HOME/platform-tools
-export ANDROID_CMD_LINE_TOOLS=$ANDROID_HOME/cmdline-tools/latest
-export ANDROID_BUILD_TOOLS_34=$ANDROID_HOME/build-tools/34.0.0
+# Build on NAS and monitor output
+docker --context ubuntu-nas build --progress=plain -t workshop-env:latest . 2>&1 | tee /tmp/docker_build.log
 
-export PATH=$ANDROID_HOME:$ANDROID_PLATFORM_TOOLS:$ANDROID_CMD_LINE_TOOLS/bin:$ANDROID_BUILD_TOOLS_34
-
+# Build locally and monitor output
+docker --context default build --progress=plain -t workshop-env:latest . 2>&1 | tee /tmp/docker_build.log
 ```
 
-## Installation for Windows
+**Build time:** 5-15 minutes (setup runs during build)
+**Image size:** ~2-3GB (all tools pre-installed)
 
-### node installation
-https://nodejs.org/en/download/
+### Run Image
 
+The container automatically starts Appium server on port 4723 when launched:
 
-e.g. 
-### Android SDK with Android Studio
-https://developer.android.com/studio/index.html  
-Goto Configure environment variables: 
+```shell
+# Run locally: USB + port + daemon mode
+docker run -d --name appium-server --privileged -p 4723:4723 -v /dev/bus/usb:/dev/bus/usb workshop-env:latest
 
-```System Properties -> Environment Variables -> System Variables -> New -> ANDROID_HOME``` 
-
-and set value as **C:Users\YourUser\AppData\Local\Android\SDK** (path where SDK is installed)
-
-Add the Android SDK paths into your existing PATH variable value as `%ANDROID_HOME%\tools;%ANDROID_HOME%\platform-tools;%ANDROID_HOME%\build-tools`
-
----
-
-## fallback for nvm (https://www.freecodecamp.org/news/node-version-manager-nvm-install-guide/)
-
-execute in terminal
-
-```
-brew install nvm 
-# or via 
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+# Run on NAS context
+docker --context ubuntu-nas run -d --name appium-server --privileged -p 4723:4723 -v /dev/bus/usb:/dev/bus/usb workshop-env:latest
 ```
 
-if not automatically added during installation, do manually after install
+**Startup:** Instant - Appium server starts automatically!
 
-```
-export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-```
+### Verify Appium Server
 
-## fallback for sdkman (https://sdkman.io/install/)
+```shell
+# Check if container is running
+docker ps
 
-```
-curl -s "https://get.sdkman.io" | bash
-```
+# Check Appium server logs
+docker logs appium-server
 
-Follow the on-screen instructions to wrap up the installation. Afterward, open a new terminal or run the following in the same shell:
-
-```
-source "$HOME/.sdkman/bin/sdkman-init.sh"
+# Test Appium server endpoint
+curl http://localhost:4723/status
 ```
 
-### working mvn command running the tests
+### Container Management
+
+```shell
+# Stop the server
+docker stop appium-server
+
+# Restart the server
+docker start appium-server
+
+# Remove container (to recreate)
+docker rm -f appium-server
 ```
-mvn test -Dbrowser=chrome -DbaseUrl="https://www.wikipedia.org" -Dcucumber.filter.tags=@all -Dcucumber.glue=at.ucaat.demo.stepdefinitions -Dcucumber.features=src/test/resources/features
+
+### Interactive Access (Optional)
+
+If you need to access the container shell for debugging:
+
+```shell
+# Execute bash in running container
+docker exec -it appium-server bash
+
+# Or run a new container in interactive mode
+docker run -it --rm --privileged -p 4723:4723 -v /dev/bus/usb:/dev/bus/usb workshop-env:latest bash
 ```
 
-### selenium-server download
+## Technical Info
 
+### Script Features
+
+`setup_environment.sh` works on both bare metal Ubuntu and Docker containers:
+
+✅ **Color-coded output** - Uses tput with ANSI fallback for Docker builds  
+✅ **Smart terminal detection** - Automatically handles missing TERM variable  
+✅ **Package manager support** - Works with apt-get and yum  
+✅ **Shell detection** - Configures bash/zsh appropriately  
+✅ **Dynamic version detection** - Automatically installs latest Android build-tools  
+✅ **User-level installation** - Installs to $HOME (NVM, SDKMAN, Android SDK)  
+✅ **Sudo support** - Uses sudo only for system packages  
+✅ **Idempotent** - Safe to run multiple times  
+
+### Docker Build
+
+- **Build time:** 5-15 minutes (setup runs during `docker build`)
+- **Image size:** ~2-3GB (all tools pre-installed)
+- **Container startup:** Instant (no runtime setup)
+- **Tools included:** Node.js, Appium, Java 23, Maven, Android SDK
+
+### Bare Metal Installation
+
+Works on any Linux system with a standard package manager. Run as a regular user with sudo privileges:
+
+```bash
+./setup_environment.sh
 ```
-java -jar selenium-server-4.30.0.jar standalone
-```
-
-
-
----
-
-
-
-
-

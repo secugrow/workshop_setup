@@ -39,14 +39,7 @@ install_prerequisites() {
     # Check if unzip is installed
     if ! command -v unzip &> /dev/null; then
         print_msg "unzip could not be found, installing..."
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            if command -v brew &> /dev/null; then
-                brew install unzip
-            else
-                print_err_msg "Homebrew is not installed. Please install it first (https://brew.sh)."
-                exit 1
-            fi
-        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        if [[ "$OSTYPE" == "linux-gnu"* ]]; then
             sudo apt-get update
             sudo apt-get install -y unzip
         else
@@ -62,30 +55,32 @@ install_prerequisites() {
 download_and_extract_sdk() {
     print_msg "Downloading Android SDK..."
 
-    # Determine the URL based on the operating system
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        URL="https://dl.google.com/android/repository/commandlinetools-mac-11076708_latest.zip"
-        OUTPUT="commandlinetools-mac-11076708_latest.zip"
-    elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
-        URL="https://dl.google.com/android/repository/commandlinetools-win-11076708_latest.zip"
-        OUTPUT="commandlinetools-win-11076708_latest.zip"
-    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        URL="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
-        OUTPUT="commandlinetools-linux-11076708_latest.zip"
-    else
-        print_err_msg "Unsupported OS: $OSTYPE"
-        exit 1
+    # Fetch the latest version from Android's repository XML
+    print_msg "Fetching latest commandlinetools version..."
+    REPO_XML=$(wget -qO- https://dl.google.com/android/repository/repository2-3.xml)
+    LATEST_VERSION=$(echo "$REPO_XML" | grep -oP 'commandlinetools-linux-[0-9]+_latest\.zip' | head -1)
+
+    if [[ -z "$LATEST_VERSION" ]]; then
+        print_err_msg "Failed to fetch latest version. Falling back to known version."
+        LATEST_VERSION="commandlinetools-linux-11076708_latest.zip"
     fi
+
+    print_msg "Using version: $LATEST_VERSION"
+    URL="https://dl.google.com/android/repository/$LATEST_VERSION"
+    OUTPUT="$LATEST_VERSION"
 
     ANDROID_SDK_ROOT_DIR="$(pwd)/android_sdk"
 
     if [[ -d "$ANDROID_SDK_ROOT_DIR" ]]; then
-        print_msg "Directory $ANDROID_SDK_ROOT_DIR already exists."
-        #exit 1
+        print_err_msg "Directory $ANDROID_SDK_ROOT_DIR already exists. Please delete and run script again."
+        exit 1
     else
         wget -O "$OUTPUT" "$URL"
         print_msg "Unzipping downloaded package..."
-        unzip -q "$OUTPUT" -d "$ANDROID_SDK_ROOT_DIR"
+        mkdir -p "$ANDROID_SDK_ROOT_DIR/cmdline-tools"
+        unzip -q "$OUTPUT" -d "$ANDROID_SDK_ROOT_DIR/cmdline-tools"
+        # Restructure to proper SDK layout: cmdline-tools/latest/
+        mv "$ANDROID_SDK_ROOT_DIR/cmdline-tools/cmdline-tools" "$ANDROID_SDK_ROOT_DIR/cmdline-tools/latest"
         rm "$OUTPUT" # Clean up the downloaded ZIP file after unzipping
     fi
 }
@@ -95,7 +90,7 @@ configure_environment() {
     print_msg "Configuring environment variables..."
 
     # Detect the current shell
-    CURRENT_SHELL=$(ps -p $(ps -o ppid= -p $$) -o comm= | sed 's/^-//')
+    CURRENT_SHELL=$(ps -p $(ps -o ppid= -p $$) -o comm=)
 
     # Determine the shell configuration file dynamically
      case "$CURRENT_SHELL" in
@@ -103,14 +98,7 @@ configure_environment() {
             SHELL_CONFIG_FILE="$HOME/.zshrc"
             ;;
         bash)
-            if [[ "$OSTYPE" == "darwin"* ]]; then
-                # macOS: Prefer ~/.bash_profile, fallback to ~/.profile
-                if [[ -f "$HOME/.bash_profile" ]]; then
-                    SHELL_CONFIG_FILE="$HOME/.bash_profile"
-                else
-                    SHELL_CONFIG_FILE="$HOME/.profile"
-                fi
-            elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            if [[ "$OSTYPE" == "linux-gnu"* ]]; then
                 # Linux: Prefer ~/.bashrc, fallback to ~/.profile
                 if [[ -f "$HOME/.bashrc" ]]; then
                     SHELL_CONFIG_FILE="$HOME/.bashrc"
@@ -154,8 +142,7 @@ configure_environment() {
         NR == insert_line {
             print "##### Android SDK Environment Variables (added on " current_date ") #####"
             print "export ANDROID_SDK_ROOT='"$ANDROID_SDK_ROOT_DIR"'"
-            print "export ANDROID_HOME='"$ANDROID_SDK_ROOT_DIR"'"
-            print "export ANDROID_CMDLINE_TOOLS=$ANDROID_SDK_ROOT/cmdline-tools"
+            print "export ANDROID_CMDLINE_TOOLS=$ANDROID_SDK_ROOT/cmdline-tools/latest"
             print "export ANDROID_PLATFORM_TOOLS=$ANDROID_SDK_ROOT/platform-tools"
             print "export ANDROID_BUILD_TOOLS=$ANDROID_SDK_ROOT/build-tools/34.0.0"
             print "export PATH=$ANDROID_CMDLINE_TOOLS/bin:$ANDROID_PLATFORM_TOOLS:$ANDROID_BUILD_TOOLS:$PATH"
@@ -169,18 +156,23 @@ configure_environment() {
 install_sdk_components() {
     print_msg "Installing Android SDK components..."
 
-    ANDROID_CMDLINE_TOOLS="$ANDROID_SDK_ROOT_DIR/cmdline-tools"
-    if echo "$PATH" | grep -q "$ANDROID_SDK_ROOT_DIR"; then
-        yes | "$ANDROID_CMDLINE_TOOLS/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT_DIR" --install "platform-tools" "platforms;android-33" "build-tools;34.0.0"
-        print_msg "Android SDK installation completed successfully."
-    else
-        print_msg_multiline <<EOF
-$(tput bold)Environment variables need to be updated manually. Please run the following commands to update env-vars and install necessary Android tools:$(tput sgr0)
+    ANDROID_CMDLINE_TOOLS="$ANDROID_SDK_ROOT_DIR/cmdline-tools/latest"
 
-$(tput bold)$(tput setaf 3)source $SHELL_CONFIG_FILE
-yes | "$ANDROID_CMDLINE_TOOLS/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT_DIR" --install "platform-tools" "platforms;android-33" "build-tools;34.0.0"$(tput sgr0)
-EOF
+    # Ensure Java is available by sourcing SDKMAN if installed
+    if [ -d "$HOME/.sdkman" ] && [ ! -x "$(command -v java)" ]; then
+        print_msg "Loading SDKMAN to access Java..."
+        export SDKMAN_DIR="$HOME/.sdkman"
+        [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ] && source "$SDKMAN_DIR/bin/sdkman-init.sh"
     fi
+
+    # Source the shell config to update PATH if needed
+    if ! echo "$PATH" | grep -q "$ANDROID_SDK_ROOT_DIR"; then
+        print_msg "Sourcing $SHELL_CONFIG_FILE to update environment variables..."
+        source "$SHELL_CONFIG_FILE" 2>/dev/null || true
+    fi
+
+    yes | "$ANDROID_CMDLINE_TOOLS/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT_DIR" --install "platform-tools" "platforms;android-33" "build-tools;34.0.0"
+    print_msg "Android SDK installation completed successfully."
 }
 
 # Main script execution
