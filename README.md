@@ -1,6 +1,12 @@
-# Workshop Setup
 
-# Prerequisites
+# New Development is moved to [AppiBridgeBox](https://github.com/appibridgebox/setup_appibridgebox)
+
+
+
+
+## Workshop Setup
+
+## Prerequisites
 Install Java for your OS (recommended Version 21 or above)
 
 make the script executable via `chmod u+x install_tools.sh` and execute it afterwards via `./install_tools.sh`
